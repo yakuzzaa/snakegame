@@ -4,9 +4,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.MotionEventCompat;
+import androidx.room.Room;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -18,6 +20,11 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.TextView;
+
+import com.example.lab4game.room.AppDatabase;
+import com.example.lab4game.room.ResultDAO;
+import com.example.lab4game.room.ResultEntity;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -43,6 +50,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private SurfaceHolder surfaceHolder;
     private float x1 = 0.0F;
     private float y1 = 0.0f;
+    public long first_time;
+
+    AppDatabase db = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +61,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         setContentView(R.layout.activity_main);
         surfaceView = findViewById(R.id.surfaceView);
         score = findViewById(R.id.score);
-        surfaceView.getHolder().addCallback(this);}
+        surfaceView.getHolder().addCallback(this);
+        this.db = Room.databaseBuilder(this, AppDatabase.class, "scores").build();
+
+    }
 
     public boolean onTouchEvent(MotionEvent event){
 
@@ -119,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         }
         addPoint();
         moveSnake();
+        first_time = System.currentTimeMillis();
     }
 
     private void addPoint(){
@@ -175,23 +189,28 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                     timer.cancel();
 
                     Context context;
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setMessage("Your score= "+ scores);
-                    builder.setTitle("Game over");
-                    builder.setCancelable(false);
-                    builder.setPositiveButton("Start again", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            init();
-                        }
-                    });
+                    ResultDAO resultDAO = db.resultDAO();
+                    resultDAO.insert(new ResultEntity(scores, first_time,((System.currentTimeMillis() - first_time)/1000)));
+                    Intent intent = new Intent(getApplicationContext(), ResultActivity.class);
+                    startActivity(intent);
 
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            builder.show();
-                        }
-                    });
+//                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+//                    builder.setMessage("Your score= "+ scores);
+//                    builder.setTitle("Game over");
+//                    builder.setCancelable(false);
+//                    builder.setPositiveButton("Start again", new DialogInterface.OnClickListener() {
+//                        @Override
+//                        public void onClick(DialogInterface dialogInterface, int i) {
+//                            init();
+//                        }
+//                    });
+//
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            builder.show();
+//                        }
+//                    });
                 }
                 else{
                     canvas = surfaceHolder.lockCanvas();
