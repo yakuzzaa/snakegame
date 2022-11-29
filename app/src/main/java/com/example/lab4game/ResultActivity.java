@@ -34,9 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class ResultActivity extends AppCompatActivity {
-    AppDatabase db = null;
-    LinkedList<ResultEntity> results = new LinkedList<ResultEntity>();
-    int best;
+    LinkedList<ResultEntity> results = new LinkedList<>();
     Button restart;
     private DatabaseReference mDatabase;
 
