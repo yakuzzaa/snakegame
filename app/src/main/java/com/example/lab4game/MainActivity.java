@@ -22,6 +22,8 @@ import android.widget.TextView;
 import com.example.lab4game.room.AppDatabase;
 import com.example.lab4game.room.ResultDAO;
 import com.example.lab4game.room.ResultEntity;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +49,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private Paint objectColor = null;
     private SurfaceHolder surfaceHolder;
 
+    private DatabaseReference mDatabase;
+
 
 
     AppDatabase db = null;
@@ -60,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         score = findViewById(R.id.score);
         surfaceView.getHolder().addCallback(this);
         this.db = Room.databaseBuilder(this, AppDatabase.class, "scores").build();
+        this.mDatabase = FirebaseDatabase.getInstance().getReference();
 
     }
 
@@ -184,8 +189,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 if (checkGameOver(headPositionX,headPositionY)){
                     timer.purge();
                     timer.cancel();
-
-                    Context context;
+                    // TODO: Add saving results to firebase instance
+                    mDatabase.child("scores").push().setValue(new ResultEntity(gameState.getScores(), gameState.getFirst_time(),((System.currentTimeMillis() - gameState.getFirst_time())/1000)));
                     ResultDAO resultDAO = db.resultDAO();
                     resultDAO.insert(new ResultEntity(gameState.getScores(), gameState.getFirst_time(),((System.currentTimeMillis() - gameState.getFirst_time())/1000)));
                     Intent intent = new Intent(getApplicationContext(), ResultActivity.class);

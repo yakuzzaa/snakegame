@@ -39,6 +39,8 @@ public class ResultActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         this.db = Room.databaseBuilder(this, AppDatabase.class, "scores").allowMainThreadQueries().build();
         results = db.resultDAO().getAll();
+        // TODO Add retriving data from FireBase instace
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_result);
         output();
