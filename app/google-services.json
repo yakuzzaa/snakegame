@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "526459416107",
+    "project_id": "lab4game-97fe2",
+    "storage_bucket": "lab4game-97fe2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:526459416107:android:c38a2e06d07298d8b9446e",
+        "android_client_info": {
+          "package_name": "com.example.lab4game"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "526459416107-5elhsol4mihoiff0p7qqgr2jbmtl1t8o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCroMPEyNbfSafpgaJ103JHlmw0fmciwlM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "526459416107-5elhsol4mihoiff0p7qqgr2jbmtl1t8o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
