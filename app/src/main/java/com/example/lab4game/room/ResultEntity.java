@@ -21,6 +21,8 @@ public class ResultEntity {
         this.date = date;
         this.game_time = game_time;
     }
+    public ResultEntity() {
 
+    }
 }
 

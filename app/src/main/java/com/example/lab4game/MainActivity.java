@@ -1,13 +1,11 @@
 package com.example.lab4game;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.MotionEventCompat;
 import androidx.room.Room;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -24,6 +22,8 @@ import android.widget.TextView;
 import com.example.lab4game.room.AppDatabase;
 import com.example.lab4game.room.ResultDAO;
 import com.example.lab4game.room.ResultEntity;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,67 +32,65 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
+    public final GameState gameState = new GameState();
     private final List<Snake> SnakeList = new ArrayList<>();
     private SurfaceView surfaceView;
     private TextView score;
-    private String movingPossition = "right";
-    private int scores = 0;
+
     private static final int pointSize = 28;
     private static final int defaultTalePoints = 3;
     private static final int snakeColor = Color.RED;
     private static final int yColor = Color.YELLOW;
     private static final int snakeMovingSpeed = 800;
-    private int positionX, positionY;
+
     private Timer timer;
     private Canvas canvas = null;
     private Paint pointColor = null;
     private Paint objectColor = null;
     private SurfaceHolder surfaceHolder;
-    private float x1 = 0.0F;
-    private float y1 = 0.0f;
-    public long first_time;
+
+    private DatabaseReference mDatabase;
+
 
     AppDatabase db = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
         surfaceView = findViewById(R.id.surfaceView);
         score = findViewById(R.id.score);
         surfaceView.getHolder().addCallback(this);
         this.db = Room.databaseBuilder(this, AppDatabase.class, "scores").build();
+        this.mDatabase = FirebaseDatabase.getInstance().getReference();
 
     }
 
-    public boolean onTouchEvent(MotionEvent event){
+    public boolean onTouchEvent(MotionEvent event) {
 
         int action = MotionEventCompat.getActionMasked(event);
-        switch(action) {
+        switch (action) {
 
-            case (MotionEvent.ACTION_DOWN) :
-                this.x1 = (int) event.getX();
-                this.y1 = (int) event.getY();
-                Log.d("TEST", "X1 Y1 is " + this.x1 + " " +  this.y1);
+            case (MotionEvent.ACTION_DOWN):
+                this.gameState.setX1((int) event.getX());
+                this.gameState.setY1((int) event.getY());
+                Log.d("TEST", "X1 Y1 is " + this.gameState.getX1() + " " + this.gameState.getY1());
                 break;
-            case (MotionEvent.ACTION_UP) :
+            case (MotionEvent.ACTION_UP):
                 int x2 = (int) event.getX();
                 int y2 = (int) event.getY();
-                if (Math.abs(x1-x2) > Math.abs(y1-y2)) {
-                    if(x1 > x2) {
-                        movingPossition = "left";
+                if (Math.abs(gameState.getX1() - x2) > Math.abs(gameState.getY1() - y2)) {
+                    if (gameState.getX1() > x2) {
+                        gameState.setMovingPossition("left");
+                    } else {
+                        gameState.setMovingPossition("right");
                     }
-                    else{
-                        movingPossition = "right";
-                }
-                }
-                else {
-                    if(y1 > y2) {
-                        movingPossition = "top";
-                    }
-                    else{
-                        movingPossition = "bottom";
+                } else {
+                    if (gameState.getY1() > y2) {
+                        gameState.setMovingPossition("top");
+                    } else {
+                        gameState.setMovingPossition("bottom");
                     }
 
                 }
@@ -116,15 +114,15 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     }
 
-    private void init(){
+    private void init() {
         SnakeList.clear();
         score.setText("0");
-        scores = 0;
-        movingPossition = "right";
-        int startPositionX = (pointSize)*defaultTalePoints;
+        gameState.setScores(0);
+        gameState.setMovingPossition("right");
+        int startPositionX = (pointSize) * defaultTalePoints;
 
-        for (int i = 0;i < defaultTalePoints; i++){
-            Snake snake = new Snake(startPositionX,pointSize);
+        for (int i = 0; i < defaultTalePoints; i++) {
+            Snake snake = new Snake(startPositionX, pointSize);
             SnakeList.add(snake);
 
             startPositionX = startPositionX - (pointSize * 2);
@@ -132,28 +130,29 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         }
         addPoint();
         moveSnake();
-        first_time = System.currentTimeMillis();
+        gameState.setFirst_time(System.currentTimeMillis());
     }
 
-    private void addPoint(){
-        int surfaceWidth = surfaceView.getWidth() - (pointSize*2);
-        int surfaceHeight = surfaceView.getHeight() - (pointSize*2);
+    private void addPoint() {
+        int surfaceWidth = surfaceView.getWidth() - (pointSize * 2);
+        int surfaceHeight = surfaceView.getHeight() - (pointSize * 2);
 
         int randomXPosition = new Random().nextInt(surfaceWidth / pointSize);
         int randomYPosition = new Random().nextInt(surfaceHeight / pointSize);
 
-        if ((randomXPosition % 2) != 0){
+        if ((randomXPosition % 2) != 0) {
             randomXPosition = randomXPosition + 1;
 
         }
-        if ((randomYPosition % 2) != 0){
+        if ((randomYPosition % 2) != 0) {
             randomYPosition = randomYPosition + 1;
 
         }
-        positionX = (pointSize*randomXPosition) + pointSize;
-        positionY = (pointSize*randomYPosition) + pointSize;
+        gameState.setPositionX((pointSize * randomXPosition) + pointSize);
+        gameState.setPositionY((pointSize * randomYPosition) + pointSize);
     }
-    private void moveSnake(){
+
+    private void moveSnake() {
         timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -161,68 +160,46 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 int headPositionX = SnakeList.get(0).getPositionX();
                 int headPositionY = SnakeList.get(0).getPositionY();
 
-                if(headPositionX == positionX && positionY == headPositionY){
+                if (headPositionX == gameState.getPositionX() && gameState.getPositionY() == headPositionY) {
                     growSnake();
                     addPoint();
                 }
-                switch (movingPossition){
+                switch (gameState.getMovingPossition()) {
                     case "right":
-                        SnakeList.get(0).setPositionX(headPositionX + (pointSize*2));
+                        SnakeList.get(0).setPositionX(headPositionX + (pointSize * 2));
                         SnakeList.get(0).setPositionY(headPositionY);
                         break;
                     case "left":
-                        SnakeList.get(0).setPositionX(headPositionX - (pointSize*2));
+                        SnakeList.get(0).setPositionX(headPositionX - (pointSize * 2));
                         SnakeList.get(0).setPositionY(headPositionY);
                         break;
                     case "top":
                         SnakeList.get(0).setPositionX(headPositionX);
-                        SnakeList.get(0).setPositionY(headPositionY - (pointSize*2));
+                        SnakeList.get(0).setPositionY(headPositionY - (pointSize * 2));
                         break;
                     case "bottom":
                         SnakeList.get(0).setPositionX(headPositionX);
-                        SnakeList.get(0).setPositionY(headPositionY + (pointSize*2));
+                        SnakeList.get(0).setPositionY(headPositionY + (pointSize * 2));
                         break;
                 }
 
-                if (checkGameOver(headPositionX,headPositionY)){
+                if (checkGameOver(headPositionX, headPositionY)) {
                     timer.purge();
                     timer.cancel();
-
-                    Context context;
-                    ResultDAO resultDAO = db.resultDAO();
-                    resultDAO.insert(new ResultEntity(scores, first_time,((System.currentTimeMillis() - first_time)/1000)));
+                    mDatabase.child("scores").push().setValue(new ResultEntity(gameState.getScores(), gameState.getFirst_time(), ((System.currentTimeMillis() - gameState.getFirst_time()) / 1000)));
                     Intent intent = new Intent(getApplicationContext(), ResultActivity.class);
                     startActivity(intent);
-
-//                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-//                    builder.setMessage("Your score= "+ scores);
-//                    builder.setTitle("Game over");
-//                    builder.setCancelable(false);
-//                    builder.setPositiveButton("Start again", new DialogInterface.OnClickListener() {
-//                        @Override
-//                        public void onClick(DialogInterface dialogInterface, int i) {
-//                            init();
-//                        }
-//                    });
-//
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            builder.show();
-//                        }
-//                    });
-                }
-                else{
+                } else {
                     canvas = surfaceHolder.lockCanvas();
                     canvas.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR);
-                    canvas.drawCircle(SnakeList.get(0).getPositionX(),SnakeList.get(0).getPositionY(),pointSize,createPointColor());
-                    canvas.drawCircle(positionX,positionY,pointSize,objectPaintColor());
-                    for(int i = 1; i<SnakeList.size();i++){
+                    canvas.drawCircle(SnakeList.get(0).getPositionX(), SnakeList.get(0).getPositionY(), pointSize, createPointColor());
+                    canvas.drawCircle(gameState.getPositionX(), gameState.getPositionY(), pointSize, objectPaintColor());
+                    for (int i = 1; i < SnakeList.size(); i++) {
                         int getTempPositionX = SnakeList.get(i).getPositionX();
                         int getTempPositionY = SnakeList.get(i).getPositionY();
                         SnakeList.get(i).setPositionX(headPositionX);
                         SnakeList.get(i).setPositionY(headPositionY);
-                        canvas.drawCircle(SnakeList.get(i).getPositionX(),SnakeList.get(i).getPositionY(),pointSize,createPointColor());
+                        canvas.drawCircle(SnakeList.get(i).getPositionX(), SnakeList.get(i).getPositionY(), pointSize, createPointColor());
                         headPositionX = getTempPositionX;
                         headPositionY = getTempPositionY;
                     }
@@ -230,29 +207,30 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 }
             }
 
-        },1000-snakeMovingSpeed,1000-snakeMovingSpeed);
+        }, 1000 - snakeMovingSpeed, 1000 - snakeMovingSpeed);
     }
-    private void growSnake(){
-        Snake snake = new Snake(0,0);
+
+    private void growSnake() {
+        Snake snake = new Snake(0, 0);
         SnakeList.add(snake);
-        scores++;
+        gameState.setScores(gameState.getScores() + 1);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                score.setText(String.valueOf(scores));
+                score.setText(String.valueOf(gameState.getScores()));
             }
         });
 
     }
-    private boolean checkGameOver(int headPositionX,int headPositionY){
+
+    private boolean checkGameOver(int headPositionX, int headPositionY) {
         boolean gameOver = false;
-        if(SnakeList.get(0).getPositionX() < 0 || SnakeList.get(0).getPositionY() <0 ||
-                SnakeList.get(0).getPositionX() >=surfaceView.getWidth() ||
-                SnakeList.get(0).getPositionY() >=surfaceView.getHeight()){
+        if (SnakeList.get(0).getPositionX() < 0 || SnakeList.get(0).getPositionY() < 0 ||
+                SnakeList.get(0).getPositionX() >= surfaceView.getWidth() ||
+                SnakeList.get(0).getPositionY() >= surfaceView.getHeight()) {
             gameOver = true;
-        }
-        else{
-            for (int i = 1; i < SnakeList.size();i++){
+        } else {
+            for (int i = 1; i < SnakeList.size(); i++) {
                 if (headPositionX == SnakeList.get(i).getPositionX() &&
                         headPositionY == SnakeList.get(i).getPositionY()) {
                     gameOver = true;
@@ -262,8 +240,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         }
         return gameOver;
     }
-    private Paint createPointColor(){
-        if (pointColor == null){
+
+    private Paint createPointColor() {
+        if (pointColor == null) {
             pointColor = new Paint();
             pointColor.setColor(snakeColor);
             pointColor.setStyle(Paint.Style.FILL);
@@ -272,8 +251,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         return pointColor;
 
     }
-    private Paint objectPaintColor(){
-        if (objectColor == null){
+
+    private Paint objectPaintColor() {
+        if (objectColor == null) {
             objectColor = new Paint();
             objectColor.setColor(yColor);
             objectColor.setStyle(Paint.Style.FILL);
